@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <base target="_top">
+        <style>
+
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f2f2f2;
+                margin: 0;
+                padding: 0;
+                border-radius: 20px;
+            }
+
+            /* Page header */
+            header {
+                color: black;
+                text-align: center;
+                padding: 20px 0;
+                border-radius: 20px;
+            }
+
+            #drop-zone {
+                border: 2px dashed #ccc;
+                border-radius: 8px;
+                padding: 20px;
+                text-align: center;
+                cursor: pointer;
+            }
+
+            /* Main container */
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #ffffff;
+                border-radius: 5px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            }
+
+            /* Loading bar styles */
+            #loading-bar-container {
+                display: none;
+                margin-top: 20px;
+            }
+
+            #loading-bar {
+                width: 0;
+                height: 20px;
+                background-color: #3498db;
+            }
+
+            #loading-text {
+                margin-top: 10px;
+            }
+
+            #sheet-name-input {
+                margin-top: 10px;
+            }
+            
+        </style>
+    </head>
+
+    <body>
+        <header>
+            <h1>CSV Import</h1>
+        </header>
+
+        <div class="container">
+            <div id="drop-zone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)">
+                <p>Drag and drop a CSV file here</p>
+            </div>
+
+            <div id="column-selector" style="margin-top: 20px;">
+                <label>Columns to import:</label>
+                <div id="columns"></div>
+            </div>
+
+            <div id="filter-input" style="margin-top: 10px;">
+                <label for="filter">Filter data:</label>
+                <input type="text" id="filter">
+            </div>
+
+            <div id="filter-option" style="margin-top: 10px;">
+                <label for="filterOption">Choose filter option:</label>
+                <select id="filterOption">
+                    <option value="contains">Contains</option>
+                    <option value="startsWith">Starts With</option>
+                    <option value="endsWith">Ends With</option>
+                </select>
+            </div>
+
+            <div id="sheet-options" style="margin-top: 10px;">
+                <label>Create New Sheet:</label>
+                <input type="checkbox" id="createNewSheet" checked>
+            </div>
+
+            <button id="import-button" onclick="importCSV()"
+                style="margin-top: 10px; background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                Import CSV
+            </button>
+
+            <!-- Loading bar container -->
+            <div id="loading-bar-container" style="display: none; margin-top: 20px;">
+                <div id="loading-bar" style="width: 0; height: 20px; background-color: #3498db;"></div>
+                <div id="loading-text" style="margin-top: 10px;">Loading: 0%</div>
+            </div>
+        </div>
+
+        <script>
+            var csvContent; 
+
+            function handleDrop(event) {
+                event.preventDefault();
+                var file = event.dataTransfer.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        csvContent = e.target.result; 
+                        populateColumnSelector(csvContent);
+                    };
+                    reader.readAsText(file);
+                } else {
+                    alert("Please drop a CSV file.");
+                }
+            }
+
+            function handleDragOver(event) {
+                event.preventDefault();
+                var dropZone = document.getElementById("drop-zone");
+                dropZone.style.border = "2px dashed #2ecc71";
+            }
+
+            function populateColumnSelector(csvContent) {
+                var lines = csvContent.split(/\r\n|\n/);
+                var header = lines[0].split(",");
+                var columnsDiv = document.getElementById("columns");
+
+                columnsDiv.innerHTML = "";
+
+                header.forEach(function (column, index) {
+                    var checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.id = "column-" + index;
+                    checkbox.value = index;
+                    checkbox.checked = true;
+
+                    var label = document.createElement("label");
+                    label.htmlFor = "column-" + index;
+                    label.appendChild(document.createTextNode(column));
+
+                    columnsDiv.appendChild(checkbox);
+                    columnsDiv.appendChild(label);
+                    columnsDiv.appendChild(document.createElement("br"));
+                });
+            }
+
+            function importCSV() {
+                var checkboxes = document.querySelectorAll("#columns input[type=checkbox]:checked");
+                var selectedColumns = Array.from(checkboxes).map(checkbox => parseInt(checkbox.value));
+                var filterValue = document.getElementById("filter").value;
+                var filterOption = document.getElementById("filterOption").value;
+                var sheetName = ''; 
+
+        
+                var createNewSheet = document.getElementById("createNewSheet").checked;
+
+              
+                var loadingBarContainer = document.getElementById("loading-bar-container");
+                loadingBarContainer.style.display = "block";
+
+             
+                var progress = 0;
+                var interval = setInterval(function () {
+                    progress += 5; // Increase the progress bar by 5% per interval
+                    var loadingBar = document.getElementById("loading-bar");
+                    var loadingText = document.getElementById("loading-text");
+
+                    loadingBar.style.width = progress + "%";
+                    loadingText.textContent = "Loading: " + progress + "%";
+
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        loadingText.textContent = "Loading complete!";
+
+                        
+                        google.script.run.withSuccessHandler(uploadSuccess).importCSVFromDropbox({
+                            selectedColumns: selectedColumns,
+                            filterValue: filterValue,
+                            filterOption: filterOption,
+                            csvContent: csvContent,
+                            sheetName: sheetName,
+                            createNewSheet: createNewSheet
+                        });
+                    }
+                }, 200); 
+            }
+
+            function uploadSuccess(message) {
+                if (message instanceof Error) {
+                    console.error("Error:", message);
+                    alert("Error occurred. Check the console for details.");
+                } else {
+                    alert("Imported CSV file successfully.");
+                }
+                google.script.host.close();
+            }
+        </script>
+    </body>
+</html>
