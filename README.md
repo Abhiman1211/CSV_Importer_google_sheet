@@ -5,8 +5,19 @@
 * It allows you to populate the data into a chosen Google Sheet, either appending to existing data or creating a new sheet 📥📋.</br>
 * It effectively handles large CSV files (~15MB CSV file) without causing performance issues or prolonged waiting times.</br>
 -------------------------------------------------------------------------------------------------------------
-Demo Video</br>
-
+# How to use it?
+-------------------------------------------------------------------------------------------------------------
+* Open any Google Sheet.</br>
+* On the navigation bar select Extensions.</br>
+* Click on AppScript.</br>
+* After that you will see a workspace.</br>
+* Create a new HTML file and paste the HTML code.</br>
+* Following that paste the Google Script code.</br>
+* Save it and click on run.</br>
+* After that go to the sheet and you will be able to see that extension.</br>
+-------------------------------------------------------------------------------------------------------------
+# Demo Video
+-------------------------------------------------------------------------------------------------------------
 https://github.com/Abhiman1211/CSV_Importer_google_sheet/assets/73026322/ef900eac-9077-4e0f-b5b6-05db84848792
 
 
